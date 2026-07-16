@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>TaskHub — Watch & Earn</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- ✅ GIGA AD SDK - Required for all ad features -->
-<script src="https://ad.gigapub.tech/script?id=7320"></script>
+<!-- ✅ GIGAPUB SDK - Required for all ad features -->
+<script src="https://sdk.giga.pub/sdk.js"></script>
 <!-- Supabase JS (UMD) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 
@@ -171,10 +171,10 @@
   .optional-btn.done{background:#2a3542; color:var(--muted); cursor:default;}
   .optional-btn:disabled{opacity:.6;}
 
-  /* GIGA AD BLOCK ALWAYS VISIBLE */
-  .giga-section{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:16px;}
-  .giga-section h2{font-family:'Sora',sans-serif; font-size:14.5px; font-weight:700; margin-bottom:12px;}
-  .giga-cap{font-size:11.5px; color:var(--muted); margin-bottom:10px;}
+  /* GIGAPUB SECTION */
+  .gigapub-section{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:16px;}
+  .gigapub-section h2{font-family:'Sora',sans-serif; font-size:14.5px; font-weight:700; margin-bottom:12px;}
+  .gigapub-cap{font-size:11.5px; color:var(--muted); margin-bottom:10px;}
 </style>
 </head>
 <body>
@@ -321,16 +321,16 @@
       </div>
     </div>
 
-    <!-- ============ GIGA TASK BLOCK - ALWAYS VISIBLE ============ -->
-    <div class="giga-section">
+    <!-- ============ GIGAPUB OFFER TASKS BLOCK ============ -->
+    <div class="gigapub-section">
       <h2>🎁 Offer Tasks - Complete Unlimited!</h2>
-      <div class="giga-cap">
+      <div class="gigapub-cap">
         <div style="margin-bottom:8px;">📊 Daily 0 / 300 pts | ⏱️ Cooldown: 30 sec</div>
         <div>Complete as many offers as you want with 30-second cooldown between tasks!</div>
       </div>
-      <!-- ✅ GIGA AD BLOCK - Always visible, always available -->
-      <div id="gigaAdBlock"></div>
-      <p style="font-size:11px; color:var(--muted); margin-top:10px;">📋 Powered by Giga Pub</p>
+      <!-- ✅ GIGAPUB BANNER PLACEMENT - ID 7320 -->
+      <div id="gp_banner_7320" style="margin-top:10px;"></div>
+      <p style="font-size:11px; color:var(--muted); margin-top:10px;">📋 Powered by GigaPub</p>
     </div>
 
     <div class="disclaimer">
@@ -495,7 +495,11 @@ const DAILY_BONUS_CONFIG = {
   bonusMessage: '🎉 You received 100 bonus points!'
 };
 
-const GIGA_APP_ID = '7320';
+// GigaPub Configuration
+const GIGAPUB_CONFIG = {
+  appId: '7320',
+  bannerId: 'gp_banner_7320'
+};
 
 const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
 const ADMIN_CHAT_ID = '23674574';
@@ -551,8 +555,26 @@ if (tg?.initDataUnsafe?.user?.id) {
   document.getElementById('userIdChip').innerText = appUserId;
 }
 
-// ============ GIGA SDK INIT ============
+// ============ GIGAPUB SDK INIT ============
 window.onload = async () => {
+  // Initialize GigaPub SDK
+  if (typeof gp !== 'undefined') {
+    console.log('✅ GigaPub SDK loaded');
+    try {
+      // Initialize GigaPub with your app ID
+      gp.init({ appId: GIGAPUB_CONFIG.appId });
+      console.log('✅ GigaPub initialized with app ID: ' + GIGAPUB_CONFIG.appId);
+      
+      // Load banner placement
+      gp.renderBanner(GIGAPUB_CONFIG.bannerId);
+      console.log('✅ GigaPub banner rendered');
+    } catch (e) {
+      console.error('GigaPub init error', e);
+    }
+  } else {
+    console.warn('⚠️ GigaPub SDK not loaded');
+  }
+
   // Load server state from Supabase (merge into local state)
   await loadStateFromSupabase();
 
@@ -791,15 +813,21 @@ function toast(msg){
   toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
-// ============ WATCH AD (GIGA) ============
+// ============ WATCH AD (GIGAPUB) ============
 document.getElementById('watchAdBtn').addEventListener('click', async () => {
+  if (typeof gp === 'undefined') {
+    toast('⏳ Ad system loading...');
+    return;
+  }
+  
   const btn = document.getElementById('watchAdBtn');
   btn.disabled = true;
   btn.innerText = '⏳ Loading Ad...';
   
   try {
-    const res = await window.showGiga?.();
-    if (res) {
+    // GigaPub rewarded video ad
+    const res = await gp.showRewardedVideo();
+    if (res && res.success) {
       balance += AD_REWARD;
       adDailyCount += AD_REWARD;
       lastAdTime = Date.now();
@@ -862,12 +890,12 @@ document.getElementById('joinBtn').onclick = () => {
   render();
 };
 
-// ============ TRACK OFFER TASK COMPLETION (via Giga) ============
-window.onOfferTaskCompleted = function(){
+// ============ TRACK OFFER TASK COMPLETION (GigaPub callbacks) ============
+// GigaPub will trigger callbacks when users complete offers
+window.onGigaPubOfferCompleted = function(reward){
   if (offerTasksCompletedToday < DAILY_BONUS_CONFIG.offerTasksRequired) {
     offerTasksCompletedToday++;
-    // record an offer-task activity to server
-    addActivity('Offer task completed',  (DAILY_BONUS_CONFIG.offerTasksRequired ? 10 : 0));
+    addActivity('Offer task completed', reward || 10);
     updateDailyBonus();
     render();
   }
