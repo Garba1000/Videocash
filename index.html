@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>TaskHub — Watch & Earn</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- ✅ ADSGRAM SDK - Required for all ad features -->
-<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<!-- ✅ GIGA AD SDK - Required for all ad features -->
+<script src="https://ad.gigapub.tech/script?id=7320"></script>
 <!-- Supabase JS (UMD) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 
@@ -171,10 +171,10 @@
   .optional-btn.done{background:#2a3542; color:var(--muted); cursor:default;}
   .optional-btn:disabled{opacity:.6;}
 
-  /* ADSGRAM BLOCK ALWAYS VISIBLE */
-  .adsgram-section{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:16px;}
-  .adsgram-section h2{font-family:'Sora',sans-serif; font-size:14.5px; font-weight:700; margin-bottom:12px;}
-  .adsgram-cap{font-size:11.5px; color:var(--muted); margin-bottom:10px;}
+  /* GIGA AD BLOCK ALWAYS VISIBLE */
+  .giga-section{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:16px;}
+  .giga-section h2{font-family:'Sora',sans-serif; font-size:14.5px; font-weight:700; margin-bottom:12px;}
+  .giga-cap{font-size:11.5px; color:var(--muted); margin-bottom:10px;}
 </style>
 </head>
 <body>
@@ -321,16 +321,16 @@
       </div>
     </div>
 
-    <!-- ============ ADSGRAM TASK BLOCK - ALWAYS VISIBLE ============ -->
-    <div class="adsgram-section">
+    <!-- ============ GIGA TASK BLOCK - ALWAYS VISIBLE ============ -->
+    <div class="giga-section">
       <h2>🎁 Offer Tasks - Complete Unlimited!</h2>
-      <div class="adsgram-cap">
+      <div class="giga-cap">
         <div style="margin-bottom:8px;">📊 Daily 0 / 300 pts | ⏱️ Cooldown: 30 sec</div>
         <div>Complete as many offers as you want with 30-second cooldown between tasks!</div>
       </div>
-      <!-- ✅ TASK BLOCK - Always visible, always available -->
-      <adsgram-task id="adsgramBlock" data-block-id="task-37623"></adsgram-task>
-      <p style="font-size:11px; color:var(--muted); margin-top:10px;">📋 Block ID: task-37623</p>
+      <!-- ✅ GIGA AD BLOCK - Always visible, always available -->
+      <div id="gigaAdBlock"></div>
+      <p style="font-size:11px; color:var(--muted); margin-top:10px;">📋 Powered by Giga Pub</p>
     </div>
 
     <div class="disclaimer">
@@ -495,9 +495,7 @@ const DAILY_BONUS_CONFIG = {
   bonusMessage: '🎉 You received 100 bonus points!'
 };
 
-const WATCH_AD_BLOCK_ID = '37622';
-const ADSGRAM_TASK_BLOCK_ID = 'task-37623';
-const JOIN_CHANNEL_AD_BLOCK_ID = '37677';
+const GIGA_APP_ID = '7320';
 
 const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
 const ADMIN_CHAT_ID = '23674574';
@@ -553,27 +551,8 @@ if (tg?.initDataUnsafe?.user?.id) {
   document.getElementById('userIdChip').innerText = appUserId;
 }
 
-// ============ ADSGRAM SDK INIT ============
-let rewardAd = null;
-let joinAd = null;
-
+// ============ GIGA SDK INIT ============
 window.onload = async () => {
-  // Init Adsgram (if available)
-  if (typeof Adsgram !== 'undefined') {
-    console.log('✅ Adsgram SDK loaded');
-    try {
-      rewardAd = Adsgram.init({ blockId: WATCH_AD_BLOCK_ID });
-      console.log('✅ Watch Ad initialized');
-      joinAd = Adsgram.init({ blockId: JOIN_CHANNEL_AD_BLOCK_ID });
-      console.log('✅ Join Channel Ad initialized');
-      joinAd.show().finally(() => {
-        document.getElementById('joinPopup').style.display = 'flex';
-      });
-    } catch (e) { console.error('Adsgram init error', e); }
-  } else {
-    console.error('❌ Adsgram SDK not loaded');
-  }
-
   // Load server state from Supabase (merge into local state)
   await loadStateFromSupabase();
 
@@ -812,20 +791,15 @@ function toast(msg){
   toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
-// ============ WATCH AD ============
+// ============ WATCH AD (GIGA) ============
 document.getElementById('watchAdBtn').addEventListener('click', async () => {
-  if (!rewardAd) {
-    toast('⏳ Ad system loading...');
-    return;
-  }
-  
   const btn = document.getElementById('watchAdBtn');
   btn.disabled = true;
   btn.innerText = '⏳ Loading Ad...';
   
   try {
-    const res = await rewardAd.show();
-    if (res?.done) {
+    const res = await window.showGiga?.();
+    if (res) {
       balance += AD_REWARD;
       adDailyCount += AD_REWARD;
       lastAdTime = Date.now();
@@ -888,7 +862,7 @@ document.getElementById('joinBtn').onclick = () => {
   render();
 };
 
-// ============ TRACK OFFER TASK COMPLETION (via Adsgram) ============
+// ============ TRACK OFFER TASK COMPLETION (via Giga) ============
 window.onOfferTaskCompleted = function(){
   if (offerTasksCompletedToday < DAILY_BONUS_CONFIG.offerTasksRequired) {
     offerTasksCompletedToday++;
